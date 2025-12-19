@@ -28,14 +28,19 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
     ),
   ];
 
-  void onAddClicked(BuildContext context)  {
-    showModalBottomSheet<Expense>(
+  void onAddClicked(BuildContext context) async {
+    final newExpense = await showModalBottomSheet<Expense>(
       isScrollControlled: false,
       context: context,
-      builder: (c) => Center(child: ExpenseForm()),
+      builder: (c) => const Center(child: ExpenseForm()),
     );
 
-    // TODO YOUR CODE HERE
+    if (newExpense == null) {
+      return;
+    }
+    setState(() {
+      _expenses.add(newExpense);
+    });
   }
 
   @override
@@ -45,18 +50,41 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
       appBar: AppBar(
         actions: [
           IconButton(
-            onPressed: () => {onAddClicked(context)},
-            icon: Icon(Icons.add),
+            onPressed: () => onAddClicked(context),
+            icon: const Icon(Icons.add),
           ),
         ],
         backgroundColor: Colors.blue[700],
         title: const Text('Ronan-The-Best Expenses App'),
       ),
-      body: ListView.builder(
-        itemCount: _expenses.length,
-        itemBuilder: (context, index) => ExpenseItem(expense: _expenses[index]),
-      ),
+      body: _expenses.isEmpty
+      ? const Center(child: Text("No expense found. Start adding some"))
+      : Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            children: [
+              const SizedBox(height: 6),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _expenses.length,
+                  itemBuilder: (context, index) => Dismissible(
+                    key: ValueKey(_expenses[index]),
+                    onDismissed: (direction) {
+                      setState(() {
+                        _expenses.removeAt(index);
+                      }); 
+                      // message after remove
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Expense deleted")),
+                      );
+                    },
+                    child: ExpenseItem(expense: _expenses[index]),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
     );
   }
 }
-
